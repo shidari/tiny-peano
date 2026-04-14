@@ -11,4 +11,6 @@ import Eval (eval)
 interpret :: String -> String
 interpret input = case parseExpr (pack input) of
   Left err   -> "Parse error: " ++ show err
-  Right expr -> show (fromNat (eval expr))
+  Right expr -> case eval expr of
+    Left err -> "Eval error: " ++ err
+    Right n  -> show (fromNat n)

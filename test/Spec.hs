@@ -6,7 +6,7 @@ import Test.Hspec
 import Test.Hspec.QuickCheck (prop)
 import Test.QuickCheck
 
-import Nat (Nat(..), add, toNat, fromNat)
+import Nat (Nat(..), add, sub, toNat, fromNat)
 import Lib (interpret)
 
 instance Arbitrary Nat where
@@ -29,6 +29,19 @@ main = hspec $ do
       prop "fromNat で整合: fromNat (add a b) = fromNat a + fromNat b" $ \a b ->
         fromNat (add a b) `shouldBe` fromNat a + fromNat b
 
+    describe "sub" $ do
+      prop "n - 0 = n" $ \n ->
+        sub n Zero `shouldBe` Right n
+      prop "n - n = 0" $ \n ->
+        sub n n `shouldBe` Right Zero
+      prop "a >= b なら fromNat で整合" $ \a b ->
+        let (x, y) = if a >= b then (a, b) else (b, a)
+        in fmap fromNat (sub x y) `shouldBe` Right (fromNat x - fromNat y)
+      prop "a < b なら Left" $ \a b ->
+        a < b ==> case sub a b of
+          Left _  -> True
+          Right _ -> False
+
     describe "toNat / fromNat" $ do
       prop "roundtrip" $ \(NonNegative n) ->
         fromNat (toNat n) `shouldBe` n
@@ -47,3 +60,11 @@ main = hspec $ do
     prop "括弧つき" $ \(NonNegative a) (NonNegative b) (NonNegative c) ->
       let input = "(" ++ show a ++ " + " ++ show b ++ ") + " ++ show c
       in interpret input `shouldBe` show (a + b + c :: Integer)
+    prop "引き算 (a >= b)" $ \(NonNegative (a :: Integer)) (NonNegative b) ->
+      a >= b ==>
+        let input = show a ++ " - " ++ show b
+        in interpret input `shouldBe` show (a - b)
+    prop "負になる引き算は Eval error" $ \(NonNegative (a :: Integer)) (NonNegative b) ->
+      a < b ==>
+        let input = show a ++ " - " ++ show b
+        in interpret input `shouldStartWith` "Eval error"

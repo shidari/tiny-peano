@@ -16,18 +16,24 @@ import Lexer (lexeme, symbol, skipSpace)
 data Expr
   = Lit Integer   -- 数値リテラル
   | Add Expr Expr -- 足し算
+  | Sub Expr Expr -- 引き算
   deriving (Show, Eq)
 
 -- パーサー本体
--- expr = term (('+' term)*)
+-- expr = term ((('+' | '-') term)*)
 -- term = number | '(' expr ')'
 parseExpr :: Text -> Either (ParseErrorBundle Text Void) Expr
 parseExpr = parse (skipSpace *> pExpr <* eof) ""
   where
     pExpr = do
       first <- pTerm
-      rest  <- many (symbol "+" *> pTerm)
-      pure $ foldl Add first rest
+      rest  <- many pOpTerm
+      pure $ foldl (\acc (op, t) -> op acc t) first rest
+
+    pOpTerm = do
+      op <- (Add <$ symbol "+") <|> (Sub <$ symbol "-")
+      t  <- pTerm
+      pure (op, t)
 
     pTerm = pParens <|> pNumber
 

@@ -1,6 +1,7 @@
 module Nat
     ( Nat(..)
     , add
+    , sub
     , toNat
     , fromNat
     ) where
@@ -14,6 +15,11 @@ instance Show Nat where
 add :: Nat -> Nat -> Nat
 add Zero     m = m
 add (Succ n) m = Succ (add n m)
+
+sub :: Nat -> Nat -> Either String Nat
+sub n        Zero     = Right n
+sub Zero     (Succ _) = Left "negative result"
+sub (Succ n) (Succ m) = sub n m
 
 toNat :: Integer -> Nat
 toNat 0 = Zero
