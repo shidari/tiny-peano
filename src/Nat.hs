@@ -2,6 +2,7 @@ module Nat
     ( Nat(..)
     , add
     , sub
+    , mul
     , toNat
     , fromNat
     ) where
@@ -20,6 +21,10 @@ sub :: Nat -> Nat -> Either String Nat
 sub n        Zero     = Right n
 sub Zero     (Succ _) = Left "negative result"
 sub (Succ n) (Succ m) = sub n m
+
+mul :: Nat -> Nat -> Nat
+mul Zero     _ = Zero
+mul (Succ n) m = add m (mul n m)
 
 toNat :: Integer -> Nat
 toNat 0 = Zero
