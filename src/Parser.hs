@@ -18,36 +18,31 @@ data Expr
   | Add Expr Expr -- 足し算
   | Sub Expr Expr -- 引き算
   | Mul Expr Expr -- 掛け算
+  | Div Expr Expr -- 割り算
   deriving (Show, Eq)
 
 -- パーサー本体
--- expr   = term ((('+' | '-') term)*)
--- term   = factor (('*' factor)*)
--- factor = number | '(' expr ')'
+-- expr    = term ((('+' | '-') term)*)
+-- term    = primary ((('*' | '/') primary)*)
+-- primary = number | '(' expr ')'
 parseExpr :: Text -> Either (ParseErrorBundle Text Void) Expr
 parseExpr = parse (skipSpace *> pExpr <* eof) ""
   where
     pExpr = do
       first <- pTerm
-      rest  <- many pOpTerm
+      rest  <- many ((,) <$> pOp <*> pTerm)
       pure $ foldl (\acc (op, t) -> op acc t) first rest
       where
-        pOpTerm = do
-          op <- (Add <$ symbol "+") <|> (Sub <$ symbol "-")
-          t  <- pTerm
-          pure (op, t)
+        pOp = (Add <$ symbol "+") <|> (Sub <$ symbol "-")
 
     pTerm = do
-      first <- pFactor
-      rest  <- many pOpFactor
-      pure $ foldl (\acc (op, f) -> op acc f) first rest
+      first <- pPrimary
+      rest  <- many ((,) <$> pOp <*> pPrimary)
+      pure $ foldl (\acc (op, p) -> op acc p) first rest
       where
-        pOpFactor = do
-          op <- Mul <$ symbol "*"
-          f  <- pFactor
-          pure (op, f)
+        pOp = (Mul <$ symbol "*") <|> (Div <$ symbol "/")
 
-    pFactor = pParens <|> pNumber
+    pPrimary = pParens <|> pNumber
       where
         pParens = symbol "(" *> pExpr <* symbol ")"
         pNumber = Lit <$> lexeme L.decimal

@@ -3,9 +3,12 @@ module Nat
     , add
     , sub
     , mul
+    , div
     , toNat
     , fromNat
     ) where
+
+import Prelude hiding (div)
 
 data Nat = Zero | Succ Nat
   deriving (Eq, Ord)
@@ -25,6 +28,12 @@ sub (Succ n) (Succ m) = sub n m
 mul :: Nat -> Nat -> Nat
 mul Zero     _ = Zero
 mul (Succ n) m = add m (mul n m)
+
+div :: Nat -> Nat -> Either String Nat
+div _ Zero = Left "division by zero"
+div n m    = case sub n m of
+  Left _  -> Right Zero
+  Right r -> Succ <$> div r m
 
 toNat :: Integer -> Nat
 toNat 0 = Zero
